@@ -1,0 +1,106 @@
+Downstream gpios
+
+gpio-0   (ear_jack_detect     ) in  hi
+gpio-2   (wlan_irq            ) in  lo
+gpio-3   (gpio_kp_in          ) in  lo
+gpio-6   (msecure             ) out hi
+gpio-7   (tps6236x_vsel0      ) out hi
+gpio-8   (gpio_kp_in          ) in  hi
+gpio-13  (charge_n            ) out lo
+gpio-15  (CP_RST              ) out lo
+gpio-17  (nfc_irq             ) in  hi
+gpio-18  (AP_AGPS_TSYNC       ) out lo
+gpio-19  (tsp_en              ) out hi
+gpio-21  (gpio_proximity_out  ) in  hi
+gpio-22  (cp_usb_on           ) out lo
+gpio-23  (s6e8aa0_reset       ) out hi
+gpio-24  (fsa9840_external_id ) in  hi
+gpio-25  (gp2a_power_supply_on) out lo
+gpio-27  (bcm4330_wake_gpio   ) out lo
+gpio-30  (gpio_kp_in          ) in  hi
+
+GPIOs 32-63, gpio:
+gpio-42  (bcm4330_nreset_gpip ) out lo
+gpio-45  (GYRO_INT            ) in  lo
+gpio-46  (tsp_int_n           ) in  hi
+gpio-48  (MAIN_MICBIAS_EN     ) out lo
+gpio-49  (ear_micbias_en      ) out lo
+gpio-50  (RESET_REQ_N         ) out lo
+gpio-53  (CP_ON               ) out lo
+gpio-54  (vibrator-en         ) out lo
+gpio-63  (?                   ) in  lo
+
+GPIOs 64-95, gpio:
+gpio-73  (hw_rev3             ) in  hi
+gpio-74  (hw_rev2             ) in  lo
+gpio-75  (hw_rev1             ) in  lo
+gpio-76  (hw_rev0             ) in  hi
+gpio-83  (charging_n          ) in  hi
+gpio-86  (thermal_shutdown    ) in  lo
+gpio-95  (CP_DUMP_INT         ) in  lo
+
+GPIOs 96-127, gpio:
+gpio-96  (fsa3200_mhl_sel     ) out lo
+gpio-97  (fsa3200_ap_sel      ) out lo
+gpio-98  (sda                 ) in  hi
+gpio-99  (scl                 ) in  hi
+gpio-100 (?                   ) out lo
+gpio-101 (uart_sel            ) out hi
+gpio-102 (charge_cur_adj      ) out lo
+gpio-103 (bcm4330_nshutdown_gp) out lo
+gpio-104 (vwl1271             ) out hi
+gpio-119 (PDA_ACTIVE          ) out lo
+gpio-120 (PHONE_ACTIVE        ) in  lo
+gpio-121 (pogo_data           ) out lo
+gpio-122 (ACC_INT             ) in  lo
+gpio-127 (audpwron            ) out lo
+
+GPIOs 128-159, gpio:
+gpio-130 (ap_i2c3_scl         ) in  lo
+gpio-131 (ap_i2c3_sda         ) in  lo
+gpio-136 (GPS_nRST            ) out hi
+gpio-137 (GPS_PWR_EN          ) out lo
+gpio-142 (charger_n           ) in  lo
+gpio-157 (MSENSE_IRQ          ) out hi
+gpio-158 (emmc_en             ) out hi
+
+GPIOs 160-191, gpio:
+gpio-161 (?                   ) out lo
+gpio-164 (GPS_UART_SEL        ) out hi
+gpio-169 (pogo_det            ) in  lo
+gpio-170 (hw_rev4             ) in  lo
+gpio-171 (SUB_MICBIAS_EN      ) out lo
+gpio-172 (nfc_fw              ) out lo
+gpio-173 (nfc_en              ) out lo
+gpio-175 (?                   ) in  lo
+gpio-176 (MAG_INT             ) in  hi
+gpio-177 (bcm4330_host_wake_gp) in  lo
+
+Mainline gpios
+
+gpiochip1: GPIOs 0-31, parent: platform/4a310000.gpio, gpio-0-31:
+ gpio-3   (                    |power               ) in  lo IRQ
+ gpio-8   (                    |volume_down         ) in  hi IRQ ACTIVE LOW
+ gpio-13  (                    |charge_n            ) out lo
+ gpio-19  (                    |tsp_reg_en          ) out hi
+ gpio-30  (                    |volume_up           ) in  hi IRQ ACTIVE LOW
+
+gpiochip2: GPIOs 32-63, parent: platform/48055000.gpio, gpio-32-63:
+ gpio-46  (                    |tsp_reg_res         ) out hi
+
+gpiochip3: GPIOs 64-95, parent: platform/48057000.gpio, gpio-64-95:
+ gpio-83  (                    |?                   ) in  hi
+ gpio-86  (                    |tshut               ) in  lo IRQ
+
+gpiochip4: GPIOs 96-127, parent: platform/48059000.gpio, gpio-96-127:
+ gpio-102 (                    |charge_cur_adj      ) out lo
+ gpio-127 (                    |audpwron            ) out hi
+
+gpiochip5: GPIOs 128-159, parent: platform/4805b000.gpio, gpio-128-159:
+ gpio-130 (                    |scl                 ) in  lo
+ gpio-131 (                    |sda                 ) in  lo
+ gpio-142 (                    |?                   ) in  lo
+
+gpiochip6: GPIOs 160-191, parent: platform/4805d000.gpio, gpio-160-191:
+
+gpiochip0: GPIOs 508-511, parent: platform/50000000.gpmc, omap-gpmc:

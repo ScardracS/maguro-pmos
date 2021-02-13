@@ -1,0 +1,480 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include "omap4460.dtsi"
+#include "omap4-mcpdm.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Samsung Galaxy Nexus";
+	compatible = "ti,tuna", "ti,omap4460", "ti,omap4";
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x40000000>; /* 1 GB of RAM */
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ramoops_region@a0000000 {
+			no-map;
+			reg = <0xa0000000 0x200000>;
+		};
+
+		framebuffer_region@bea70000 {
+			no-map;
+			reg = <0xbea70000 (720 * 1280 * 4)>;
+		};
+	};
+
+	chosen {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		framebuffer@bea70000 {
+			compatible = "simple-framebuffer";
+			reg = <0xbea70000 (720 * 1280 * 4)>;
+			width = <720>;
+			height = <1280>;
+			stride = <(720 * 4)>;
+			format = "a8r8g8b8";
+
+			vdd3-supply = <&vaux3>;
+			vci-supply = <&vusim>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		power {
+			label = "power";
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_POWER>;
+			wakeup-source;
+		};
+
+		volume-down {
+			label = "volume_down";
+			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEDOWN>;
+		};
+
+		volume-up {
+			label = "volume_up";
+			gpios = <&gpio1 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+	};
+
+	sound {
+		compatible = "ti,abe-twl6040";
+		ti,model = "SDP4430";
+
+		ti,jack-detection = <1>;
+		ti,mclk-freq = <38400000>;
+
+		ti,mcpdm = <&mcpdm>;
+		/*ti,dmic = <&dmic>;*/
+
+		ti,twl6040 = <&twl6040>;
+
+		/* Audio routing */
+		ti,audio-routing =
+			"Headset Stereophone", "HSOL",
+			"Headset Stereophone", "HSOR",
+			"Earphone Spk", "EP",
+			"Ext Spk", "HFL",
+			"Ext Spk", "HFR",
+			"Line Out", "AUXL",
+			"Line Out", "AUXR",
+			"Vibrator", "VIBRAL",
+			"Vibrator", "VIBRAR",
+			"HSMIC", "Headset Mic",
+			"Headset Mic", "Headset Mic Bias",
+			"MAINMIC", "Main Handset Mic",
+			"Main Handset Mic", "Main Mic Bias",
+			"SUBMIC", "Sub Handset Mic",
+			"Sub Handset Mic", "Main Mic Bias",
+			"AFML", "Line In",
+			"AFMR", "Line In",
+			"DMic", "Digital Mic",
+			"Digital Mic", "Digital Mic1 Bias";
+	};
+
+	tsp_en: mms144@48 {
+		compatible = "regulator-fixed";
+		regulator-name = "tsp_en";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio1 19 GPIO_ACTIVE_HIGH>;	/* GPIO_TOUCH_EN = 19 */
+		enable-active-high;
+	};
+
+	mms144_ts {
+		compatible = "i2c-gpio";
+		scl-gpios = <&gpio5 2 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>; /* GPIO_TOUCH_SCL = 130 */
+		sda-gpios = <&gpio5 3 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>; /* GPIO_TOUCH_SDA = 131 */
+		pinctrl-0 = <&mms144_pins>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		mms144@48 {
+			compatible = "melfas,mms144";
+			reg = <0x48>;
+			interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
+			vdd-supply = <&tsp_en>;
+			x-size = <720>;
+			y-size = <1080>;
+		};
+	};
+};
+
+&omap4_pmx_core {
+	twl6040_pins: pinmux_twl6040_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x120, PIN_OUTPUT | MUX_MODE3)	/* hdq_sio.gpio_127 */
+			OMAP4_IOPAD(0x1a0, PIN_INPUT | MUX_MODE0)	/* sys_nirq2.sys_nirq2 */
+		>;
+	};
+
+	dmic_pins: pinmux_dmic_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x110, PIN_OUTPUT | MUX_MODE0)	/* abe_dmic_clk1.abe_dmic_clk1 */
+			OMAP4_IOPAD(0x112, PIN_INPUT | MUX_MODE0)		/* abe_dmic_din1.abe_dmic_din1 */
+			OMAP4_IOPAD(0x114, PIN_INPUT | MUX_MODE0)		/* abe_dmic_din2.abe_dmic_din2 */
+			OMAP4_IOPAD(0x116, PIN_INPUT | MUX_MODE0)		/* abe_dmic_din3.abe_dmic_din3 */
+		>;
+	};
+
+	mcbsp1_pins: pinmux_mcbsp1_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x0fe, PIN_INPUT | MUX_MODE0)						/* abe_mcbsp1_clkx.abe_mcbsp1_clkx */
+			OMAP4_IOPAD(0x100, PIN_INPUT_PULLDOWN | MUX_MODE0)	/* abe_mcbsp1_dr.abe_mcbsp1_dr */
+			OMAP4_IOPAD(0x102, PIN_OUTPUT_PULLDOWN | MUX_MODE0)	/* abe_mcbsp1_dx.abe_mcbsp1_dx */
+			OMAP4_IOPAD(0x104, PIN_INPUT | MUX_MODE0)						/* abe_mcbsp1_fsx.abe_mcbsp1_fsx */
+		>;
+	};
+
+	mcbsp2_pins: pinmux_mcbsp2_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x0f6, PIN_INPUT | MUX_MODE0)						/* abe_mcbsp2_clkx.abe_mcbsp2_clkx */
+			OMAP4_IOPAD(0x0f8, PIN_INPUT_PULLDOWN | MUX_MODE0)	/* abe_mcbsp2_dr.abe_mcbsp2_dr */
+			OMAP4_IOPAD(0x0fa, PIN_OUTPUT_PULLDOWN | MUX_MODE0)	/* abe_mcbsp2_dx.abe_mcbsp2_dx */
+			OMAP4_IOPAD(0x0fc, PIN_INPUT | MUX_MODE0)						/* abe_mcbsp2_fsx.abe_mcbsp2_fsx */
+		>;
+	};
+
+	mcspi1_pins: pinmux_mcspi1_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x132, PIN_INPUT | MUX_MODE0)		/* mcspi1_clk.mcspi1_clk */
+			OMAP4_IOPAD(0x134, PIN_INPUT | MUX_MODE0)		/* mcspi1_somi.mcspi1_somi */
+			OMAP4_IOPAD(0x136, PIN_INPUT | MUX_MODE0)		/* mcspi1_simo.mcspi1_simo */
+			OMAP4_IOPAD(0x138, PIN_INPUT | MUX_MODE0)		/* mcspi1_cs0.mcspi1_cs0 */
+		>;
+	};
+
+	i2c1_pins: pinmux_i2c1_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x122, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c1_scl */
+			OMAP4_IOPAD(0x124, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c1_sda */
+		>;
+	};
+
+	mms144_pins: pinmux_mms144_pins {
+			pinctrl-single,pins = <
+					OMAP4_IOPAD(0x53, PIN_OUTPUT | MUX_MODE3) 					/* GPIO_TOUCH_EN */
+					OMAP4_IOPAD(0x6e, PIN_INPUT_PULLUP | MUX_MODE3)			/* GPIO_TOUCH_IRQ */
+					OMAP4_IOPAD(0xc2, PIN_INPUT_PULLUP | MUX_MODE0)			/* GPIO_TOUCH_SCL */
+					OMAP4_IOPAD(0xc3, PIN_INPUT_PULLUP | MUX_MODE0)			/* GPIO_TOUCH_SDA */
+			>;
+	};
+
+	i2c2_pins: pinmux_i2c2_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x126, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c2_scl */
+			OMAP4_IOPAD(0x128, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c2_sda */
+		>;
+	};
+
+	i2c3_pins: pinmux_i2c3_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x12a, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c3_scl */
+			OMAP4_IOPAD(0x12c, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c3_sda */
+		>;
+	};
+
+	i2c4_pins: pinmux_i2c4_pins {
+		pinctrl-single,pins = <
+			OMAP4_IOPAD(0x12e, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c4_scl */
+			OMAP4_IOPAD(0x130, PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c4_sda */
+		>;
+	};
+
+	mmc1_pins: pinmux_mmc1_pins {
+		pinctrl-single,pins = <
+			/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/mux44xx.h#L113-L122 */
+			OMAP4_IOPAD(0xe2, PIN_OUTPUT | MUX_MODE0)	/* sdmmc1_clk */
+			OMAP4_IOPAD(0xe4, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_cmd */
+			OMAP4_IOPAD(0xe6, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat0 */
+			OMAP4_IOPAD(0xe8, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat1 */
+			OMAP4_IOPAD(0xea, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat2 */
+			OMAP4_IOPAD(0xec, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat3 */
+			OMAP4_IOPAD(0xee, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat4 */
+			OMAP4_IOPAD(0xf0, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat5 */
+			OMAP4_IOPAD(0xf2, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat6 */
+			OMAP4_IOPAD(0xf4, PIN_INPUT_PULLUP | MUX_MODE0)	/* sdmmc1_dat7 */
+		>;
+	};
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+
+	clock-frequency = <400000>;
+
+	twl: twl@48 {
+		reg = <0x48>;
+		interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;		/* IRQ_SYS_1N cascaded to gic */
+	};
+
+	twl6040: twl@4b {
+		compatible = "ti,twl6040";
+		#clock-cells = <0>;
+		reg = <0x4b>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&twl6040_pins>;
+
+		interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>;		/* IRQ_SYS_2N cascaded to gic */
+		ti,audpwron-gpio = <&gpio4 31 GPIO_ACTIVE_HIGH>;	/* gpio line 127 */
+
+		vio-supply = <&v1v8>;
+		v2v1-supply = <&v2v1>;
+		enable-active-high;
+	};
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_pins>;
+
+	clock-frequency = <400000>;
+};
+
+&i2c3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c3_pins>;
+
+	clock-frequency = <100000>;
+};
+
+&i2c4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c4_pins>;
+
+	clock-frequency = <400000>;
+
+	led-controller@30 {
+		compatible = "panasonic,an30259a";
+		reg = <0x30>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			label = "red:indicator";
+		};
+
+		led@2 {
+			reg = <2>;
+			label = "green:indicator";
+		};
+
+		led@3 {
+			reg = <3>;
+			label = "blue:indicator";
+		};
+	};
+
+	fuelgauge@36 {
+		compatible = "maxim,max17040";
+		reg = <0x36>;
+	};
+
+	gyroscope@68 {
+		compatible = "invensense,mpu3050";
+		reg = <0x68>;
+	};
+
+	accelerometer@18 {
+		compatible = "bosch,bma250";
+		reg = <0x18>;
+	};
+};
+
+#include "twl6030.dtsi"
+#include "twl6030_omap4.dtsi"
+
+&vaux1 {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L427-L441 */
+	regulator-min-microvolt = <3000000>;
+	regulator-max-microvolt = <3000000>;
+	regulator-always-on;
+};
+
+&vaux2 {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L443-L458 */
+	regulator-min-microvolt = <1200000>;
+	regulator-max-microvolt = <2800000>;
+	regulator-state-mem {
+		regulator-off-in-suspend;
+	};
+};
+
+&vaux3 {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L466-L482 */
+	regulator-min-microvolt = <3100000>;
+	regulator-max-microvolt = <3100000>;
+};
+
+&vmmc {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L484-L500 */
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+};
+
+&vpp {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L502-L517 */
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <2500000>;
+	regulator-state-mem {
+	regulator-off-in-suspend;
+	};
+};
+
+&vusim {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L525-L539 */
+	regulator-min-microvolt = <2200000>;
+	regulator-max-microvolt = <2200000>;
+};
+
+&vana {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L541-L554 */
+	regulator-min-microvolt = <2100000>;
+	regulator-max-microvolt = <2100000>;
+	regulator-always-on;
+};
+
+&vcxio {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L561-L576 */
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+};
+
+&vdac {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L584-L598 */
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+};
+
+&vusb {
+	/* https://github.com/LineageOS/android_kernel_samsung_tuna/blob/3900c2b6dcee9198e4e03abfecdedd1c30f68c0f/arch/arm/mach-omap2/board-tuna.c#L604-L619 */
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+	regulator-state-mem {
+	regulator-off-in-suspend;
+	};
+};
+
+&mmc1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc1_pins>;
+
+	vmmc-supply = <&vmmc>;
+	bus-width = <8>;
+	cap-mmc-highspeed;
+	non-removable;
+};
+
+&mmc2 {
+	status = "disabled";
+};
+
+&mmc3 {
+	status = "disabled";
+};
+
+&mmc4 {
+	status = "disabled";
+};
+
+&mmc5 {
+	status = "disabled";
+};
+
+&mcspi1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mcspi1_pins>;
+
+	ti,pindir-d0-out-d1-in;
+};
+
+&mcspi2 {
+	status = "disabled";
+};
+
+&mcspi3 {
+	status = "disabled";
+};
+
+&mcspi4 {
+	status = "disabled";
+};
+
+&mcbsp1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mcbsp1_pins>;
+};
+
+&mcbsp2 {
+	status = "disabled";
+};
+
+&mcbsp3 {
+	status = "disabled";
+};
+
+/*&mcbsp2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mcbsp2_pins>;
+};*/
+
+&dmic {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&dmic_pins>;
+};
+
+&twl_usb_comparator {
+	usb-supply = <&vusb>;
+};
+
+&usb_otg_hs {
+	interface-type = <1>;
+	mode = <3>;
+	power = <50>;
+};
+
+&usbhshost {
+	port1-mode = "ehci-phy";
+};

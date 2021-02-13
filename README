@@ -1,0 +1,41 @@
+Maintainer: @ScardracS
+Actually device boot with some hack (check abootimg commands)
+and turn on the screen (using weston), nothing more.
+
+Wifi doesn't work, fixed-controllers should be ok but if you check debugfs and
+compare with the downstream you'll see how much work that thing needs to be done.
+
+Thank to @drebrez (original maintainer for the galaxy nexus),
+@mis012 and @minecrell for their help and hard work.
+
+To make things working use mms114, as the mms144 is just a patched version of the
+downstream version (soo nothing good at all).
+
+Move the i2c-gpio of touchscreen to i2c3 (as 3-0048 is the right i2c/reg for it).
+
+On boot there are lots of bugspam, as you can see error -110 from the TS,
+but checks for other ones if you want.
+
+PS: Actually only AES2 and -2 error from TS are fixed from the version released
+by @drebrez, but checks on Galaxy Nexus Wiki for more info and come to Matrix
+for asking more infos.
+
+
+Linux kernel
+============
+
+There are several guides for kernel developers and users. These guides can
+be rendered in a number of formats, like HTML and PDF. Please read
+Documentation/admin-guide/README.rst first.
+
+In order to build the documentation, use ``make htmldocs`` or
+``make pdfdocs``.  The formatted documentation can also be read online at:
+
+    https://www.kernel.org/doc/html/latest/
+
+There are various text files in the Documentation/ subdirectory,
+several of them using the Restructured Text markup notation.
+
+Please read the Documentation/process/changes.rst file, as it contains the
+requirements for building and running the kernel, and information about
+the problems which may result by upgrading your kernel.
