@@ -5,7 +5,7 @@
  * Author: Dima Zavin <dima@xxxxxxxxxxx>
  * Simon Wilson <simonwilson@xxxxxxxxxx>
  * Copyright (C) 2012 Nikolay Epifanov <nik.epifanov@xxxxxxxxx>
- * Copyright (C) 2021 Marco Scardovi <@xxxxxxxxx>
+ * Copyright (C) 2021 Marco Scardovi <marco@xxxxxxxxx>
  *
  * ISP reflashing code based on original code from Melfas.
  *
