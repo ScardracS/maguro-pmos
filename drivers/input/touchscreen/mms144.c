@@ -177,8 +177,7 @@ static void hw_reboot(struct mms_ts_info *info, bool bootloader) {
 	if (bootloader) {
 		gpio_set_value(info->pdata.gpio_scl, 0);
 		gpio_set_value(info->pdata.gpio_sda, 1);
-	}
-	else {
+	} else {
 		gpio_set_value(info->pdata.gpio_resetb, 1);
 		gpio_direction_input(info->pdata.gpio_resetb);
 		gpio_direction_input(info->pdata.gpio_scl);
