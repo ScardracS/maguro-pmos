@@ -231,8 +231,7 @@ static void isp_send_bits(struct mms_ts_info *info, u32 data, int cnt) {
 	gpio_direction_output(info->pdata.gpio_sda, 0);
 
 	/* clock out the bits, msb first */
-	while (cnt--)
-	{
+	while (cnt--) {
 	gpio_set_value(info->pdata.gpio_sda, (data >> cnt) & 1);
 	udelay(3);
 	isp_toggle_clk(info, 1, 0, 3);
