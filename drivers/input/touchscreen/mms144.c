@@ -424,8 +424,7 @@ static int fw_download(struct mms_ts_info *info, const u8 *data, size_t len) {
 		"fw image size (%d) must be a multiple of 4 bytes\n",
 		len);
 		return -EINVAL;
-	}
-	else if (len > ISP_MAX_FW_SIZE) {
+	} else if (len > ISP_MAX_FW_SIZE) {
 		dev_err(&client->dev,
 		"fw image is too big, %d > %d\n", len, ISP_MAX_FW_SIZE);
 		return -EINVAL;
