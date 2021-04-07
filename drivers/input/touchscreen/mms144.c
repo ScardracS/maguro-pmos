@@ -57,8 +57,7 @@
 
 #define FW_HEADER_VERSION 1
 
-enum
-{
+enum {
 	ISP_MODE_FLASH_ERASE = 0x59F3,
 	ISP_MODE_FLASH_WRITE = 0x62CD,
 	ISP_MODE_FLASH_READ = 0x6AC9,
@@ -67,8 +66,7 @@ enum
 static bool mms_force_reflash = false;
 module_param_named(force_reflash, mms_force_reflash, bool, S_IWUSR | S_IRUGO);
 
-struct mms_ts_info
-{
+struct mms_ts_info {
 	struct i2c_client *client;
 	struct input_dev *input_dev;
 	char phys[32];
@@ -80,8 +78,7 @@ struct mms_ts_info
 	bool enabled;
 };
 
-struct mms_fw_image
-{
+struct mms_fw_image {
 	__le32 hdr_len;
 	__le32 data_len;
 	__le32 fw_ver;
@@ -89,16 +86,14 @@ struct mms_fw_image
 	u8 data[0];
 } __packed;
 
-static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
-{
+static irqreturn_t mms_ts_interrupt(int irq, void *dev_id) {
 	struct mms_ts_info *info = dev_id;
 	struct i2c_client *client = info->client;
 	u8 buf[MAX_FINGERS * FINGER_EVENT_SZ] = { 0 };
 	int ret, i, sz, x, y, id, pressed, width, strength;
 	u8 reg = MMS_INPUT_EVENT0;
 	u8 *tmp;
-	struct i2c_msg msg[] = {
-		{
+	struct i2c_msg msg[] = { {
 			.addr = client->addr,
 			.flags = 0,
 			.buf = &reg,
@@ -170,8 +165,7 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static void hw_reboot(struct mms_ts_info *info, bool bootloader)
-{
+static void hw_reboot(struct mms_ts_info *info, bool bootloader) {
 	gpio_direction_output(info->pdata.gpio_vdd_en, 0);
 	gpio_direction_output(info->pdata.gpio_sda, bootloader ? 0 : 1);
 	gpio_direction_output(info->pdata.gpio_scl, bootloader ? 0 : 1);
@@ -180,13 +174,11 @@ static void hw_reboot(struct mms_ts_info *info, bool bootloader)
 	gpio_set_value(info->pdata.gpio_vdd_en, 1);
 	msleep(30);
 
-	if (bootloader)
-	{
+	if (bootloader) {
 		gpio_set_value(info->pdata.gpio_scl, 0);
 		gpio_set_value(info->pdata.gpio_sda, 1);
 	}
-	else
-	{
+	else {
 		gpio_set_value(info->pdata.gpio_resetb, 1);
 		gpio_direction_input(info->pdata.gpio_resetb);
 		gpio_direction_input(info->pdata.gpio_scl);
@@ -195,18 +187,15 @@ static void hw_reboot(struct mms_ts_info *info, bool bootloader)
 	msleep(40);
 }
 
-static inline void hw_reboot_bootloader(struct mms_ts_info *info)
-{
+static inline void hw_reboot_bootloader(struct mms_ts_info *info) {
 	hw_reboot(info, true);
 }
 
-static inline void hw_reboot_normal(struct mms_ts_info *info)
-{
+static inline void hw_reboot_normal(struct mms_ts_info *info) {
 	hw_reboot(info, false);
 }
 
-static void mms_pwr_on_reset(struct mms_ts_info *info)
-{
+static void mms_pwr_on_reset(struct mms_ts_info *info) {
 	struct i2c_adapter *adapter = to_i2c_adapter(info->client->dev.parent);
 
 	i2c_lock_adapter(adapter);
@@ -228,8 +217,7 @@ static void mms_pwr_on_reset(struct mms_ts_info *info)
  msleep(250);
 }
 
-static void isp_toggle_clk(struct mms_ts_info *info, int start_lvl, int end_lvl, int hold_us)
-{
+static void isp_toggle_clk(struct mms_ts_info *info, int start_lvl, int end_lvl, int hold_us) {
 	gpio_set_value(info->pdata.gpio_scl, start_lvl);
 	udelay(hold_us);
 	gpio_set_value(info->pdata.gpio_scl, end_lvl);
@@ -237,8 +225,7 @@ static void isp_toggle_clk(struct mms_ts_info *info, int start_lvl, int end_lvl,
 }
 
 /* 1 <= cnt <= 32 bits to write */
-static void isp_send_bits(struct mms_ts_info *info, u32 data, int cnt)
-{
+static void isp_send_bits(struct mms_ts_info *info, u32 data, int cnt) {
 	gpio_direction_output(info->pdata.gpio_resetb, 0);
 	gpio_direction_output(info->pdata.gpio_scl, 0);
 	gpio_direction_output(info->pdata.gpio_sda, 0);
@@ -253,8 +240,7 @@ static void isp_send_bits(struct mms_ts_info *info, u32 data, int cnt)
 }
 
 /* 1 <= cnt <= 32 bits to read */
-static u32 isp_recv_bits(struct mms_ts_info *info, int cnt)
-{
+static u32 isp_recv_bits(struct mms_ts_info *info, int cnt) {
 	u32 data = 0;
 
 	gpio_direction_output(info->pdata.gpio_resetb, 0);
@@ -263,8 +249,7 @@ static u32 isp_recv_bits(struct mms_ts_info *info, int cnt)
 	gpio_direction_input(info->pdata.gpio_sda);
 
 	/* clock in the bits, msb first */
-	while (cnt--)
-	{
+	while (cnt--) {
 		isp_toggle_clk(info, 0, 1, 1);
 		data = (data << 1) | (!!gpio_get_value(info->pdata.gpio_sda));
 	}
@@ -273,8 +258,7 @@ static u32 isp_recv_bits(struct mms_ts_info *info, int cnt)
 	return data;
 }
 
-static void isp_enter_mode(struct mms_ts_info *info, u32 mode)
-{
+static void isp_enter_mode(struct mms_ts_info *info, u32 mode) {
 	int cnt;
 	unsigned long flags;
 
@@ -284,8 +268,7 @@ static void isp_enter_mode(struct mms_ts_info *info, u32 mode)
 	gpio_direction_output(info->pdata.gpio_sda, 1);
 
 	mode &= 0xffff;
-	for (cnt = 15; cnt >= 0; cnt--)
-	{
+	for (cnt = 15; cnt >= 0; cnt--) {
 		gpio_set_value(info->pdata.gpio_resetb, (mode >> cnt) & 1);
 		udelay(3);
 		isp_toggle_clk(info, 1, 0, 3);
@@ -309,15 +292,13 @@ static void isp_exit_mode(struct mms_ts_info *info)
 	local_irq_restore(flags);
 }
 
-static void flash_set_address(struct mms_ts_info *info, u16 addr)
-{
+static void flash_set_address(struct mms_ts_info *info, u16 addr) {
 	/* Only 13 bits of addr are valid.
 	* The addr is in bits 13:1 of cmd */
 	isp_send_bits(info, (u32)(addr & 0x1fff) << 1, 18);
 }
 
-static void flash_erase(struct mms_ts_info *info)
-{
+static void flash_erase(struct mms_ts_info *info) {
 	isp_enter_mode(info, ISP_MODE_FLASH_ERASE);
 
 	gpio_direction_output(info->pdata.gpio_resetb, 0);
@@ -339,8 +320,7 @@ static void flash_erase(struct mms_ts_info *info)
 	isp_exit_mode(info);
 }
 
-static u32 flash_readl(struct mms_ts_info *info, u16 addr)
-{
+static u32 flash_readl(struct mms_ts_info *info, u16 addr) {
 	int i;
 	u32 val;
 	unsigned long flags;
@@ -364,8 +344,7 @@ static u32 flash_readl(struct mms_ts_info *info, u16 addr)
 	return val;
 }
 
-static void flash_writel(struct mms_ts_info *info, u16 addr, u32 val)
-{
+static void flash_writel(struct mms_ts_info *info, u16 addr, u32 val) {
 	unsigned long flags;
 
 	local_irq_save(flags);
@@ -391,19 +370,16 @@ static void flash_writel(struct mms_ts_info *info, u16 addr, u32 val)
 	usleep_range(300, 400);
 }
 
-static bool flash_is_erased(struct mms_ts_info *info)
-{
+static bool flash_is_erased(struct mms_ts_info *info) {
 	struct i2c_client *client = info->client;
 	u32 val;
 	u16 addr;
 
-	for (addr = 0; addr < (ISP_MAX_FW_SIZE / 4); addr++)
-	{
+	for (addr = 0; addr < (ISP_MAX_FW_SIZE / 4); addr++) {
 		udelay(40);
 		val = flash_readl(info, addr);
 
-		if (val != 0xffffffff)
-		{
+		if (val != 0xffffffff) {
 			dev_dbg(&client->dev,
 			"addr 0x%x not erased: 0x%08x != 0xffffffff\n",
 			addr, val);
@@ -413,20 +389,17 @@ static bool flash_is_erased(struct mms_ts_info *info)
 	return true;
 }
 
-static int fw_write_image(struct mms_ts_info *info, const u8 *data, size_t len)
-{
+static int fw_write_image(struct mms_ts_info *info, const u8 *data, size_t len) {
 	struct i2c_client *client = info->client;
 	u16 addr;
 	u32 val, verify_val;
 	int retries;
 
-	for (addr = 0; addr < (len / 4); addr++, data += 4)
-	{
+	for (addr = 0; addr < (len / 4); addr++, data += 4) {
 		val = get_unaligned_le32(data);
 		retries = 3;
 
-		while (retries--)
-		{
+		while (retries--) {
 			flash_writel(info, addr, val);
 			verify_val = flash_readl(info, addr);
 			if (val == verify_val)
@@ -440,25 +413,21 @@ static int fw_write_image(struct mms_ts_info *info, const u8 *data, size_t len)
 			if (retries < 0)
 			return -ENXIO;
 	}
-
 	return 0;
 }
 
-static int fw_download(struct mms_ts_info *info, const u8 *data, size_t len)
-{
+static int fw_download(struct mms_ts_info *info, const u8 *data, size_t len) {
 	struct i2c_client *client = info->client;
 	u32 val;
 	int ret = 0;
 
-	if (len % 4)
-	{
+	if (len % 4) {
 		dev_err(&client->dev,
 		"fw image size (%d) must be a multiple of 4 bytes\n",
 		len);
 		return -EINVAL;
 	}
-	else if (len > ISP_MAX_FW_SIZE)
-	{
+	else if (len > ISP_MAX_FW_SIZE) {
 		dev_err(&client->dev,
 		"fw image is too big, %d > %d\n", len, ISP_MAX_FW_SIZE);
 		return -EINVAL;
@@ -478,8 +447,7 @@ static int fw_download(struct mms_ts_info *info, const u8 *data, size_t len)
 
 	dev_info(&client->dev, "fw erase...\n");
 	flash_erase(info);
-	if (!flash_is_erased(info))
-	{
+	if (!flash_is_erased(info)) {
 		ret = -ENXIO;
 		goto err;
 	}
@@ -504,23 +472,18 @@ static int fw_download(struct mms_ts_info *info, const u8 *data, size_t len)
 	return ret;
 }
 
-static int get_fw_version(struct mms_ts_info *info)
-{
+static int get_fw_version(struct mms_ts_info *info) {
 	int ret;
 	int retries = 3;
 
 	/* this seems to fail sometimes after a reset.. retry a few times */
-	do
-	{
-		ret = i2c_smbus_read_byte_data(info->client, MMS_FW_VERSION);
-	}
+	do { ret = i2c_smbus_read_byte_data(info->client, MMS_FW_VERSION); }
 	while (ret < 0 && retries-- > 0);
 
 	return ret;
 }
 
-static int mms_ts_enable(struct mms_ts_info *info)
-{
+static int mms_ts_enable(struct mms_ts_info *info) {
 	mutex_lock(&info->lock);
 	if (info->enabled)
 	goto out;
@@ -534,8 +497,7 @@ static int mms_ts_enable(struct mms_ts_info *info)
 	return 0;
 }
 
-static void mms_ts_disable(struct mms_ts_info *info)
-{
+static void mms_ts_disable(struct mms_ts_info *info) {
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 	goto out;
@@ -547,21 +509,18 @@ static void mms_ts_disable(struct mms_ts_info *info)
 	mutex_unlock(&info->lock);
 }
 
-static int mms_ts_input_open(struct input_dev *dev)
-{
+static int mms_ts_input_open(struct input_dev *dev) {
 	struct mms_ts_info *info = input_get_drvdata(dev);
 
 	return mms_ts_enable(info);
 }
 
-static void mms_ts_input_close(struct input_dev *dev)
-{
+static void mms_ts_input_close(struct input_dev *dev) {
 	struct mms_ts_info *info = input_get_drvdata(dev);
 	mms_ts_disable(info);
 }
 
-static int mms_ts_fw_load(const struct firmware *fw, void *context)
-{
+static int mms_ts_fw_load(const struct firmware *fw, void *context) {
 	struct mms_ts_info *info = context;
 	struct i2c_client *client = info->client;
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
@@ -586,8 +545,7 @@ static int mms_ts_fw_load(const struct firmware *fw, void *context)
 		return -EINVAL;
 	}
 
-	if (ver == fw_img->fw_ver && !mms_force_reflash)
-	{
+	if (ver == fw_img->fw_ver && !mms_force_reflash) {
 		dev_info(&client->dev,
 		"firmware is up-to-date, version 0x%02x\n", ver);
 		return 0;
@@ -597,8 +555,7 @@ static int mms_ts_fw_load(const struct firmware *fw, void *context)
 	"need fw update: current version 0x%02x, 0x%02x to flash%s\n",
 	ver, fw_img->fw_ver, mms_force_reflash ? " forced" : "");
 
-	while (retries--)
-	{
+	while (retries--) {
 		i2c_lock_adapter(adapter);
 		info->pdata.mux_fw_flash(true);
 
@@ -607,8 +564,7 @@ static int mms_ts_fw_load(const struct firmware *fw, void *context)
 		info->pdata.mux_fw_flash(false);
 		i2c_unlock_adapter(adapter);
 
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			dev_err(&client->dev,
 			"error updating firmware to version 0x%02x\n",
 			fw_img->fw_ver);
@@ -618,8 +574,7 @@ static int mms_ts_fw_load(const struct firmware *fw, void *context)
 		}
 
 		ver = get_fw_version(info);
-		if (ver != fw_img->fw_ver)
-		{
+		if (ver != fw_img->fw_ver) {
 			dev_err(&client->dev,
 			"fw update succeeded, but version mismatches "
 			"(0x%x != 0x%x)\n",
@@ -633,8 +588,7 @@ static int mms_ts_fw_load(const struct firmware *fw, void *context)
 		break;
 	}
 
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		dev_err(&client->dev, "could not flash firmware, ran out of retries\n");
 		return ret;
 	}
@@ -642,8 +596,7 @@ static int mms_ts_fw_load(const struct firmware *fw, void *context)
 	return 0;
 }
 
-static int __devinit mms_ts_config(struct mms_ts_info *info)
-{
+static int __devinit mms_ts_config(struct mms_ts_info *info) {
 	struct i2c_client *client = info->client;
 	int ret;
 	char path[32];
@@ -654,8 +607,7 @@ static int __devinit mms_ts_config(struct mms_ts_info *info)
 	snprintf(path, sizeof(path), "melfas/mms144_ts_rev%i.fw",
 	info->pdata.fpcb_version);
 	ret = request_firmware(&fw, path, &client->dev);
-	if (ret)
-	{
+	if (ret) {
 		dev_err(&client->dev, "error requesting firmware %s\n", path);
 		return ret;
 	}
@@ -668,16 +620,14 @@ static int __devinit mms_ts_config(struct mms_ts_info *info)
 	return ret;
 }
 
-static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_device_id *id)
-{
+static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_device_id *id) {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct mms144_platform_data *pdata = client->dev.platform_data;
 	struct mms_ts_info *info;
 	struct input_dev *input_dev;
 	int ret = 0;
 
-	if (!pdata || !pdata->max_x || !pdata->max_y || !pdata->mux_fw_flash)
-	{
+	if (!pdata || !pdata->max_x || !pdata->max_y || !pdata->mux_fw_flash) {
 		dev_err(&client->dev, "invalid platform data\n");
 		return -EINVAL;
 	}
@@ -691,8 +641,7 @@ static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_de
 
 	info = kzalloc(sizeof(struct mms_ts_info), GFP_KERNEL);
 	input_dev = input_allocate_device();
-	if (!info || !input_dev)
-	{
+	if (!info || !input_dev) {
 		dev_err(&client->dev, "Failed to allocate memory\n");
 		goto err_alloc;
 	}
@@ -721,8 +670,7 @@ static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_de
 	input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, MAX_PRESSURE, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR, 0, MAX_WIDTH, 0, 0);
 	ret = input_mt_init_slots(input_dev, MAX_FINGERS, INPUT_MT_DIRECT);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		dev_err(&client->dev, "Failed to allocate input slots\n");
 		goto err_alloc;
 	}
@@ -730,10 +678,8 @@ static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_de
 	input_set_drvdata(input_dev, info);
 
 	ret = input_register_device(input_dev);
-	if (ret)
-	{
-		dev_err(&client->dev, "failed to register input dev (%d)\n",
-		ret);
+	if (ret) {
+		dev_err(&client->dev, "failed to register input dev (%d)\n", ret);
 		goto err_reg_input_dev;
 	}
 
@@ -746,8 +692,7 @@ static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_de
 	ret = request_threaded_irq(client->irq, NULL, mms_ts_interrupt,
 	IRQF_TRIGGER_LOW | IRQF_ONESHOT,
 	"mms144", info);
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		dev_err(&client->dev, "Failed to register interrupt\n");
 		goto err_req_irq;
 	}
@@ -768,8 +713,7 @@ static int __devinit mms_ts_probe(struct i2c_client *client, const struct i2c_de
 	return ret;
 }
 
-static int __devexit mms_ts_remove(struct i2c_client *client)
-{
+static int __devexit mms_ts_remove(struct i2c_client *client) {
 	struct mms_ts_info *info = i2c_get_clientdata(client);
 
 	free_irq(info->irq, info);
@@ -780,24 +724,20 @@ static int __devexit mms_ts_remove(struct i2c_client *client)
 }
 
 #ifdef CONFIG_PM_SLEEP
-static int mms_ts_suspend(struct device *dev)
-{
+static int mms_ts_suspend(struct device *dev) {
 	struct i2c_client *client = to_i2c_client(dev);
 	struct mms_ts_info *info = i2c_get_clientdata(client);
 	struct input_dev *input_dev = info->input_dev;
 	int i;
 
-	/* TODO: turn off the power (set vdd_en to 0) to the touchscreen
-	* on suspend
-	*/
+	/* TODO: turn off the power (set vdd_en to 0) to the touchscreen on suspend */
 
 	mutex_lock(&input_dev->mutex);
 	if (input_dev->users)
 	mms_ts_disable(info);
 	mutex_unlock(&input_dev->mutex);
 
-	for (i = 0; i < MAX_FINGERS; i++)
-	{
+	for (i = 0; i < MAX_FINGERS; i++) {
 		input_mt_slot(input_dev, i);
 		input_mt_report_slot_state(input_dev, MT_TOOL_FINGER, false);
 	}
@@ -807,8 +747,7 @@ static int mms_ts_suspend(struct device *dev)
 	return 0;
 }
 
-static int mms_ts_resume(struct device *dev)
-{
+static int mms_ts_resume(struct device *dev) {
 	struct i2c_client *client = to_i2c_client(dev);
 	struct mms_ts_info *info = i2c_get_clientdata(client);
 	struct input_dev *input_dev = info->input_dev;
