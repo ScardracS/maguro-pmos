@@ -1,4 +1,4 @@
-Maintainer: @ScardracS
+Maintainer: @scardracs
 Actually device boot with some hack (check abootimg commands)
 and turn on the screen (using weston), nothing more.
 
